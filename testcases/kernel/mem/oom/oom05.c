@@ -23,10 +23,26 @@
 
 #ifdef HAVE_NUMA_V2
 
+static void cleanup_between_tests(void)
+{
+	sleep(3);
+
+	if (SAFE_CG_HAS(tst_cg, "memory.force_empty")) {
+		SAFE_CG_PRINT(tst_cg, "memory.force_empty", "0");
+	}
+
+	if (SAFE_CG_HAS(tst_cg, "cpuset.memory_migrate")) {
+		SAFE_CG_PRINT(tst_cg, "cpuset.memory_migrate", "0");
+	}
+
+	usleep(500000);
+}
+
 static void verify_oom(void)
 {
 	tst_res(TINFO, "OOM on CPUSET & MEMCG...");
 	testoom(0, 0, ENOMEM, 1);
+	cleanup_between_tests();
 
 	/*
 	 * Under NUMA system, the migration of cpuset's memory
@@ -39,6 +55,7 @@ static void verify_oom(void)
 		tst_res(TINFO, "OOM on CPUSET & MEMCG with "
 				"cpuset.memory_migrate=1");
 		testoom(0, 0, ENOMEM, 1);
+		cleanup_between_tests();
 	}
 
 	if (SAFE_CG_HAS(tst_cg, "memory.swap.max")) {
@@ -50,6 +67,7 @@ static void verify_oom(void)
 			SAFE_CG_PRINTF(tst_cg, "memory.swap.max", "%lu", TESTMEM + TST_MB);
 
 		testoom(0, 1, ENOMEM, 1);
+		cleanup_between_tests();
 
 		tst_res(TINFO, "OOM on CPUSET & MEMCG with "
 				"disabled memswap limitation:");
@@ -58,6 +76,7 @@ static void verify_oom(void)
 		else
 			SAFE_CG_PRINT(tst_cg, "memory.swap.max", "max");
 		testoom(0, 0, ENOMEM, 1);
+		cleanup_between_tests();
 	}
 }
 
@@ -87,7 +106,7 @@ void setup(void)
 static struct tst_test test = {
 	.needs_root = 1,
 	.forks_child = 1,
-	.timeout = TST_UNLIMITED_TIMEOUT,
+	.timeout = 300,
 	.setup = setup,
 	.test_all = verify_oom,
 	.needs_cgroup_ctrls = (const char *const []){

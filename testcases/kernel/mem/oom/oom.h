@@ -98,9 +98,9 @@ static int alloc_mem(long int length, int testcase)
 static void *child_alloc_thread(void *args)
 {
 	int ret = 0;
+	int max_allocs = 1000;
 
-	/* keep allocating until there's an error */
-	while (!ret)
+	while (!ret && max_allocs-- > 0)
 		ret = alloc_mem(LENGTH, (long)args);
 	exit(ret);
 }
@@ -114,6 +114,8 @@ static void child_alloc(int testcase, int lite, int threads)
 		int ret = alloc_mem(TESTMEM * 2 + TST_MB, testcase);
 		exit(ret);
 	}
+
+	if (threads > 64) threads = 64;
 
 	th = malloc(sizeof(pthread_t) * threads);
 	if (!th) {
