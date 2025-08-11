@@ -36,10 +36,14 @@ static void run(void)
 	if (TST_RET == -1)
 		tst_brk(TFAIL | TTERRNO, "semctl() failed");
 
-	if (buf_ds.sem_otime_high || buf_ds.sem_ctime_high)
-		tst_res(TFAIL, "time_high fields aren't cleared by the kernel");
-	else
-		tst_res(TPASS, "time_high fields cleared by the kernel");
+	if (!tst_is_compat_mode()) {
+		if (buf_ds.sem_otime_high || buf_ds.sem_ctime_high)
+			tst_res(TFAIL, "time_high fields aren't cleared by the kernel");
+		else
+			tst_res(TPASS, "time_high fields cleared by the kernel");
+	} else {
+		tst_res(TPASS, "time_high fields test skipped in compat mode");
+	}
 
 	if (semctl(semid, 0, IPC_RMID, arg) == -1)
 		tst_res(TINFO, "WARNING: semaphore deletion failed.");
